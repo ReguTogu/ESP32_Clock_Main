@@ -1,32 +1,14 @@
 #include "Buzz.h"
 EventGroupHandle_t alarm_eventgroup;
 
-const int GPIO_SENSE_BIT = BIT0;
-void IRAM_ATTR button_isr_handler(void* arg) {
-    uint32_t gpio_num = (uint32_t) arg;
-    BaseType_t xHigherPriorityTaskWoken;
-    if (gpio_num==BUTTON_INPUT_IO) {
-    	xEventGroupSetBitsFromISR(alarm_eventgroup, GPIO_SENSE_BIT, &xHigherPriorityTaskWoken);
-    }
-}
-
-void button_init(void){
-     //interrupt of raising edge
-    gpio_config(&(gpio_config_t){
-        .pin_bit_mask = (1<<BUTTON_INPUT_IO),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-    });
-    gpio_set_intr_type(BUZZER_OUTPUT_IO, GPIO_INTR_POSEDGE);
-
-    //install gpio isr service
-    gpio_install_isr_service(0); // no flags
-    //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(BUZZER_OUTPUT_IO, &button_isr_handler, NULL);
-    gpio_intr_enable(BUZZER_OUTPUT_IO);
-
-}
+//const int GPIO_SENSE_BIT = BIT0;
+//void IRAM_ATTR button_isr_handler(void* arg) {
+//   uint32_t gpio_num = (uint32_t) arg;
+//    BaseType_t xHigherPriorityTaskWoken;
+//    if (gpio_num==BUTTON_INPUT_IO) {
+//    	xEventGroupSetBitsFromISR(alarm_eventgroup, GPIO_SENSE_BIT, &xHigherPriorityTaskWoken);
+//    }
+//}
 
 void buzzer_init(void){
 
@@ -56,40 +38,34 @@ void buzzer_init(void){
 }
 
 
-void buzzer_SetDuty_On(){
-     // Set duty to 50%
+/// @brief Set duty to 50% : Have sound
+void buzzer_SetDuty_On(){ 
     ESP_ERROR_CHECK(ledc_set_duty(BUZZER_MODE, BUZZER_CHANNEL, BUZZER_DUTY_ON));
      // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(BUZZER_MODE, BUZZER_CHANNEL));
     vTaskDelay(100/portTICK_PERIOD_MS);
 }
 
+/// @brief Set duty to 0% : No sound
 void buzzer_SetDuty_Off(){
-     // Set duty to 0%
     ESP_ERROR_CHECK(ledc_set_duty(BUZZER_MODE, BUZZER_CHANNEL, BUZZER_DUTY_OFF));
      // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(BUZZER_MODE, BUZZER_CHANNEL));
 }
 
-void buzzer_task(void){
-   
-    alarm_eventgroup = xEventGroupCreate();
-    button_init();
-    buzzer_init();
-    buzzer_SetDuty_On();
-}
+//void buzzer_task(void){
+//   alarm_eventgroup = xEventGroupCreate();
+//    buzzer_init();
+//}
 
-void buzzer_check(void){
-    EventBits_t bits;
+/*void buzzer_check(void){
+   EventBits_t bits;
     bits=xEventGroupWaitBits(alarm_eventgroup, GPIO_SENSE_BIT,pdTRUE, pdFALSE, 6000 / portTICK_PERIOD_MS); // max wait 60s
 		if(bits!=0) {
-            int16_t loop = 3;
-            while (loop) {
                 buzzer_SetDuty_On();
-                loop --;
             }
 		xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
         buzzer_SetDuty_Off();
     }
-}
+*/
 
