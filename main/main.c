@@ -315,7 +315,7 @@ void config_button(gpio_num_t GPIO_BUT, gpio_isr_t button_isr_handler){
 
   //hook isr handler for specific gpio pin
   gpio_isr_handler_add(GPIO_BUT, button_isr_handler, NULL);
-  gpio_intr_enable(GPIO_BUT);
+  //gpio_intr_enable(GPIO_BUT);
 }
 
 /// @brief main
