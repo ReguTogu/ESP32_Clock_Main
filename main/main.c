@@ -262,6 +262,7 @@ void Digital_Clock1(void *arg)
     lcd_write_string("00/00/0000");
 
     Print_Date(hour,minute,second,date.day,date.month,date.year); 
+
     gpio_isr_handler_add(ADD_BUT, gpio_isr_handler_1,NULL);
     gpio_intr_enable(ADD_BUT); 
 
@@ -314,7 +315,7 @@ void config_button(gpio_num_t GPIO_BUT, gpio_isr_t button_isr_handler){
   gpio_intr_enable(GPIO_BUT);
 }
 
-/// @brief ///////////////////////////////////////////////////////////////////////////////////////////////
+/// @brief main
 void app_main()
 {
   // initialize the library by associating any needed LCD interface pin
@@ -333,8 +334,8 @@ void app_main()
   config_button(ADD_BUT, gpio_isr_handler_1);
   config_button(SUB_BUT, gpio_isr_handler_2);
   config_button(CHANGE_BUT, gpio_isr_handler_4);
-  config_button(ADD_BUT, gpio_isr_handler_5);
-  config_button(ADD_BUT, gpio_isr_handler_6);
+  config_button(START_STOP_BUT, gpio_isr_handler_5);
+  config_button(RESET_BUT, gpio_isr_handler_6);
   //install gpio isr service
   gpio_install_isr_service(0); // no flags
 
