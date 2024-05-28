@@ -142,31 +142,31 @@ static void IRAM_ATTR gpio_isr_handler_6(void *arg)
 
 void Print_Date (int hour,int minute,int second,int day,int month,int year){
   sprintf(buffer, "%02d", hour);
-  lcd_set_cursor(4, 0);
+  lcd_set_cursor(1, 0);
   lcd_write_string(buffer);
 
   sprintf(buffer, "%02d", minute);
-  lcd_set_cursor(7, 0);
+  lcd_set_cursor(4, 0);
   lcd_write_string(buffer);
 
   sprintf(buffer, "%02d", second);
-  lcd_set_cursor(10, 0);
+  lcd_set_cursor(7, 0);
   lcd_write_string(buffer);
 
   sprintf(buffer, "%02d", day);
+  lcd_set_cursor(0, 1);
+  lcd_write_string(buffer);
+
+  Print_String("/",2,1);
+
+  sprintf(buffer, "%02d", month);
   lcd_set_cursor(3, 1);
   lcd_write_string(buffer);
 
   Print_String("/",5,1);
 
-  sprintf(buffer, "%02d", month);
-  lcd_set_cursor(6, 1);
-  lcd_write_string(buffer);
-
-  Print_String("/",8,1);
-
   sprintf(buffer, "%04d", year);
-  lcd_set_cursor(9, 1);
+  lcd_set_cursor(6, 1);
   lcd_write_string(buffer);
   
   int ret = readDHT();
@@ -315,7 +315,7 @@ void config_button(gpio_num_t GPIO_BUT, gpio_isr_t button_isr_handler){
 
   //hook isr handler for specific gpio pin
   gpio_isr_handler_add(GPIO_BUT, button_isr_handler, NULL);
-  //gpio_intr_enable(GPIO_BUT);
+  gpio_intr_enable(GPIO_BUT);
 }
 
 /// @brief main
@@ -360,7 +360,7 @@ void app_main()
   elapsed_time = 0;
 
   const esp_timer_create_args_t periodic_timer_args ={
-    .callback = &Digital_Clock,
+    .callback = &Digital_Clock1,
     .name = "periodic"
   };
   esp_timer_handle_t periodic_timer;
