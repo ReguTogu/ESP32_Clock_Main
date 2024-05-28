@@ -16,10 +16,7 @@
 #define BUZZER_DUTY_ON            (4096) // Set duty to 50%. (2 ** 13) * 50% = 4096
 #define BUZZER_DUTY_OFF           (0) // Set duty to 50%. (2 ** 13) * 50% = 4096
 #define BUZZER_FREQUENCY          (4000) // Frequency in Hertz. Set frequency at 4 kHz
-#define BUTTON_INPUT_IO           (27)
 
-void buzzer_task(void);
+void buzzer_init(void);
 void buzzer_SetDuty_Off();
 void buzzer_SetDuty_On();
-void button_init();
-void buzzer_check();
