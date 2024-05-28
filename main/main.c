@@ -11,6 +11,7 @@
 #include "unistd.h"
 #include "Buzz.h"
 #include "DHT.h"
+#include "image.h"
 
 char *hello = "Hello World!";
 char buffer[10];
@@ -114,7 +115,7 @@ static void IRAM_ATTR gpio_isr_handler_2(void *arg)
 static void IRAM_ATTR gpio_isr_handler_4(void *arg)
 {
   gpio_intr_disable(CHANGE_BUT);
-  if (change_flag<3){
+  if (change_flag<4){
       change_flag++;
   }else{
       change_flag=1;
@@ -138,19 +139,26 @@ static void IRAM_ATTR gpio_isr_handler_6(void *arg)
   tmp_hour = 0;
   tmp_minute = 0;
   tmp_second = 0;
+  Print_Number(tmp_hour,2,0);
+  Print_Number(tmp_minute,5,0);
+  Print_Number(tmp_second,8,0);
 }
 
 void Print_Date (int hour,int minute,int second,int day,int month,int year){
   sprintf(buffer, "%02d", hour);
-  lcd_set_cursor(1, 0);
+  lcd_set_cursor(2, 0);
   lcd_write_string(buffer);
+
+  Print_String(":", 4, 0);
 
   sprintf(buffer, "%02d", minute);
-  lcd_set_cursor(4, 0);
+  lcd_set_cursor(5, 0);
   lcd_write_string(buffer);
 
+  Print_String(":", 7, 0);
+
   sprintf(buffer, "%02d", second);
-  lcd_set_cursor(7, 0);
+  lcd_set_cursor(8, 0);
   lcd_write_string(buffer);
 
   sprintf(buffer, "%02d", day);
@@ -225,6 +233,7 @@ void Digital_Clock(void *arg)
   elapsed_time = (double)(end_time - start_time);
 }
 
+
 void Digital_Clock1(void *arg)
 {
   start_time = esp_timer_get_time();
@@ -232,10 +241,6 @@ void Digital_Clock1(void *arg)
   if (press_flag1==0) tmp_counter++;
 
   if (change_flag==1) { // Che do man hinh chinh
-    lcd_set_cursor(1, 0);
-    lcd_write_string("00:00:00");
-    lcd_set_cursor(0, 1);
-    lcd_write_string("00/00/0000");
     Print_String("H:",11,0);
     Print_String("T:",11,1);
     tmp = counter;
@@ -248,22 +253,16 @@ void Digital_Clock1(void *arg)
     // if (change_flag!=1)
     Print_Date(hour,minute,second,date.day,date.month,date.year);  
 
-    if (counter == 86400)
-    {
-      counter = 0;
-      CDate_Increment(&date);
-    }
-
       gpio_intr_disable(ADD_BUT); 
       gpio_intr_disable(SUB_BUT);  
   }
   else if (change_flag==2) { // Che do dieu chinh thoi gian
-    lcd_set_cursor(1, 0);
+   /* lcd_set_cursor(1, 0);
     lcd_write_string("00:00:00");
 
     lcd_set_cursor(0, 1);
     lcd_write_string("00/00/0000");
-
+  */
     Print_Date(hour,minute,second,date.day,date.month,date.year); 
 
     gpio_isr_handler_add(ADD_BUT, gpio_isr_handler_1,NULL);
@@ -274,11 +273,13 @@ void Digital_Clock1(void *arg)
     // gpio_isr_handler_add(CUR_BUT, gpio_isr_handler_3,NULL);
     // gpio_intr_enable(CUR_BUT);  
   }
-  else if (change_flag==3){ // Che do bam gio 
+  else if (change_flag==3) { // Che do bam gio 
     gpio_isr_handler_add(START_STOP_BUT, gpio_isr_handler_5,NULL);
     gpio_intr_enable(START_STOP_BUT);
     lcd_set_cursor(0, 1);
     lcd_write_string("          ");
+    gpio_isr_handler_add(RESET_BUT, gpio_isr_handler_6, NULL);
+    gpio_intr_enable(RESET_BUT);  
 
     if(press_flag1==0){
       tmp1 = tmp_counter;
@@ -287,18 +288,30 @@ void Digital_Clock1(void *arg)
       tmp_minute = tmp1 / 60;
       tmp1 = tmp1 % 60;
       tmp_second = tmp1;
-      }
+    }
       gpio_intr_disable(ADD_BUT);
-      gpio_intr_disable(SUB_BUT);
-      gpio_isr_handler_add(RESET_BUT, gpio_isr_handler_6, NULL);
-      gpio_intr_enable(RESET_BUT);   
+      gpio_intr_disable(SUB_BUT); 
 
-      Print_Number(tmp_hour,1,0);
-      Print_Number(tmp_minute,4,0);
-      Print_Number(tmp_second,7,0);
+      Print_Number(tmp_hour,2,0);
+      Print_Number(tmp_minute,5,0);
+      Print_Number(tmp_second,8,0);
   }
+  else if (change_flag==4) { //che do bao thuc
+    lcd_set_cursor(2, 0);
+    lcd_write_string("00:00:00");
+
+    lcd_set_cursor(0, 1);
+    lcd_write_string("00/00/0000");
+
+    add_clock_img();
+  } 
   gpio_isr_handler_add(CHANGE_BUT, gpio_isr_handler_4, NULL);
   gpio_intr_enable(CHANGE_BUT);
+  if (counter == 86400)
+  {
+    counter = 0;
+    CDate_Increment(&date);
+  }
   end_time = esp_timer_get_time();
 }
 
@@ -328,7 +341,8 @@ void app_main()
   setDHTgpio(GPIO_NUM_17);
   // set up the LCD's number of columns and rows:
   lcd_begin(16, 2);
-
+  // set up custom character:
+  config_images();
   date.day = 0;
   date.month = 0;
   date.year = 0;
