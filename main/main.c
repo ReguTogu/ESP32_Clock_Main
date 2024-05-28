@@ -4,8 +4,11 @@
 #include "driver/gpio.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "unistd.h"
 #include "Buzz.h"
 #include "DHT.h"
 
