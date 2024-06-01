@@ -15,29 +15,32 @@
 
 char *hello = "Hello World!";
 char buffer[10];
-const uint8_t rs = 5, en = 18, d4 = 19, d5 = 21, d6 = 22, d7 = 23;
+const uint8_t rs = 23, en = 22, d4 = 21, d5 = 19, d6 = 18, d7 = 5;
 
 int cursor[2] = {0, 0};
 bool cursor_flag = 0;
 
 int counter = 0;
+int hour, minute, second;
 int tmp_counter = 0;
 int tmp;
 int tmp1; //For Stopwatch
 int tmp_hour = 0;
 int tmp_minute = 0;
 int tmp_second = 0;
-int tmp_day  ;
-int tmp_month ;
-int tmp_year ;
-int hour, minute, second;
+
+int alm_counter = 0;
+int alm_hour = 0;
+int alm_minute = 0;
+int alm_second = 30;
+CDate alm_date;
 
 int change_flag = 1;
-int press_flag = 1;
-int press_flag1 = 1;
+int press_flag2 = 1; //alarm flag
+int press_flag1 = 1; //counter flag
 
-int alarm_flag= 0;
-int alarm_flag_before = 0;
+int alarm_flag= 0; //?
+int alarm_flag_before = 0;  //?
 
 CDate date;
 uint64_t start_time;
@@ -124,17 +127,31 @@ static void IRAM_ATTR gpio_isr_handler_4(void *arg)
 
 static void IRAM_ATTR gpio_isr_handler_5(void *arg)
 {
-  gpio_intr_disable(START_STOP_BUT);  
-  if (press_flag1==1){
-    press_flag1 = 0;
-  }else{
-    press_flag1 = 1;
+  gpio_intr_disable(START_STOP_BUT);
+  if (change_flag==3){
+    if (press_flag1==1)
+      press_flag1 = 0;   
+    else{
+      press_flag1 = 1;
+    }
+  }
+  if (change_flag==4){
+    if (press_flag2==0){
+      press_flag2 = 1; 
+      lcd_set_cursor(0, 0);
+      lcd_write_string("  ");
+  }
+    else{
+      press_flag2 = 0;
+      add_clock_img();
+    }
   }
 }
 
 static void IRAM_ATTR gpio_isr_handler_6(void *arg)
 {
   gpio_intr_disable(RESET_BUT);
+  if (change_flag==3){
   tmp_counter = 0;
   tmp_hour = 0;
   tmp_minute = 0;
@@ -142,6 +159,16 @@ static void IRAM_ATTR gpio_isr_handler_6(void *arg)
   Print_Number(tmp_hour,2,0);
   Print_Number(tmp_minute,5,0);
   Print_Number(tmp_second,8,0);
+  }
+  else if (change_flag==4){
+  alm_hour = 0;
+  alm_minute = 0;
+  alm_second = 0;
+  alm_date.day = 0;
+  alm_date.month = 0;
+  alm_date.year = 0;
+  Print_Date(alm_hour,alm_minute,alm_second,alm_date.day,alm_date.month,alm_date.year);
+  } 
 }
 
 void Print_Date (int hour,int minute,int second,int day,int month,int year){
@@ -183,7 +210,7 @@ void Print_Date (int hour,int minute,int second,int day,int month,int year){
     int hum = getHumidity();
   
   sprintf(buffer, "%d", hum);
-  if (temp>=10){
+  if (hum>=10){
         lcd_set_cursor(13, 0);
     }else{
         lcd_set_cursor(14, 0);
@@ -205,32 +232,6 @@ void Print_Date (int hour,int minute,int second,int day,int month,int year){
   
   lcd_set_cursor(cursor[0], cursor[1]);
   
-}
- 
-
-
-void Digital_Clock(void *arg)
-{
-  start_time = esp_timer_get_time();
-  counter++;
-  tmp = counter;
-  hour = tmp / 3600;
-  tmp = tmp % 3600;
-  minute = tmp / 60;
-  tmp = tmp % 60;
-  second = tmp;
-
-  // if (change_flag!=1)
-  Print_Date(hour,minute,second,date.day,date.month,date.year);  
-   
-  
-  if (counter == 86400)
-  {
-    counter = 0;
-    CDate_Increment(&date);
-  }
-  end_time = esp_timer_get_time();
-  elapsed_time = (double)(end_time - start_time);
 }
 
 
@@ -297,16 +298,41 @@ void Digital_Clock1(void *arg)
       Print_Number(tmp_second,8,0);
   }
   else if (change_flag==4) { //che do bao thuc
-    lcd_set_cursor(2, 0);
-    lcd_write_string("00:00:00");
+    gpio_isr_handler_add(START_STOP_BUT, gpio_isr_handler_5,NULL);
+    gpio_intr_enable(START_STOP_BUT);
+    gpio_isr_handler_add(RESET_BUT, gpio_isr_handler_6, NULL);
+    gpio_intr_enable(RESET_BUT);  
+    gpio_isr_handler_add(ADD_BUT, gpio_isr_handler_1,NULL);
+    gpio_intr_enable(ADD_BUT); 
+    gpio_isr_handler_add(SUB_BUT, gpio_isr_handler_2,NULL);
+    gpio_intr_enable(SUB_BUT);  
+    // gpio_isr_handler_add(CUR_BUT, gpio_isr_handler_3,NULL);
+   //  gpio_intr_enable(CUR_BUT);  
+    Print_Date(alm_hour,alm_minute,alm_second,alm_date.day,alm_date.month,alm_date.year);
+  }
 
-    lcd_set_cursor(0, 1);
-    lcd_write_string("00/00/0000");
-
-    add_clock_img();
-  } 
   gpio_isr_handler_add(CHANGE_BUT, gpio_isr_handler_4, NULL);
   gpio_intr_enable(CHANGE_BUT);
+
+  if(press_flag2==0){
+    if (alm_date.day == date.day && alm_date.month == date.month && alm_date.year == date.year){
+      if (alm_hour == hour && alm_minute == minute && alm_second == second){
+        buzzer_SetDuty_On(); 
+        alm_counter = 1;
+        press_flag2 = 1;
+      }
+    }
+  }
+  if (alm_counter >= 1){
+    alm_counter++;
+  }
+  if (alm_counter == 12){
+    alm_counter = 0;
+    lcd_set_cursor(0, 0);
+    lcd_write_string("  ");
+    buzzer_SetDuty_Off();
+  }
+
   if (counter == 86400)
   {
     counter = 0;
@@ -337,12 +363,15 @@ void app_main()
   // initialize the library by associating any needed LCD interface pin
   // with the pin number it is connected to
   liquid_crystal(rs, en, d4, d5, d6, d7);
-
+  // set up gpio of DHT (temperature and humidity):
   setDHTgpio(GPIO_NUM_17);
   // set up the LCD's number of columns and rows:
   lcd_begin(16, 2);
   // set up custom character:
   config_images();
+  // set up buzzer sound:
+  buzzer_init();
+
   date.day = 0;
   date.month = 0;
   date.year = 0;
@@ -353,7 +382,7 @@ void app_main()
   config_button(CHANGE_BUT, gpio_isr_handler_4);
   config_button(START_STOP_BUT, gpio_isr_handler_5);
   config_button(RESET_BUT, gpio_isr_handler_6);
-  //install gpio isr service
+  //install gpio isr service - cai dat interrupt
   gpio_install_isr_service(0); // no flags
 
   // int intr_alloc_flags1 = ESP_INTR_FLAG_LEVEL1;  // Set the desired priority level (lowest)
