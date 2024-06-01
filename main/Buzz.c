@@ -1,14 +1,4 @@
 #include "Buzz.h"
-EventGroupHandle_t alarm_eventgroup;
-
-//const int GPIO_SENSE_BIT = BIT0;
-//void IRAM_ATTR button_isr_handler(void* arg) {
-//   uint32_t gpio_num = (uint32_t) arg;
-//    BaseType_t xHigherPriorityTaskWoken;
-//    if (gpio_num==BUTTON_INPUT_IO) {
-//    	xEventGroupSetBitsFromISR(alarm_eventgroup, GPIO_SENSE_BIT, &xHigherPriorityTaskWoken);
-//    }
-//}
 
 void buzzer_init(void){
 
@@ -53,19 +43,5 @@ void buzzer_SetDuty_Off(){
     ESP_ERROR_CHECK(ledc_update_duty(BUZZER_MODE, BUZZER_CHANNEL));
 }
 
-//void buzzer_task(void){
-//   alarm_eventgroup = xEventGroupCreate();
-//    buzzer_init();
-//}
 
-/*void buzzer_check(void){
-   EventBits_t bits;
-    bits=xEventGroupWaitBits(alarm_eventgroup, GPIO_SENSE_BIT,pdTRUE, pdFALSE, 6000 / portTICK_PERIOD_MS); // max wait 60s
-		if(bits!=0) {
-                buzzer_SetDuty_On();
-            }
-		xEventGroupClearBits(alarm_eventgroup, GPIO_SENSE_BIT);
-        buzzer_SetDuty_Off();
-    }
-*/
 
